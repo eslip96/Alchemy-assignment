@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 
 from controllers import products_controller
 
+
 products= Blueprint('products', __name__)
 
 @products.route('/product', methods=['POST'])
@@ -23,6 +24,11 @@ def get_product_by_id(product_id):
 @products.route('/product/<product_id>', methods=['PUT'])
 def update_product(product_id):
     return products_controller.update_product(request, product_id)
+
+@products.route('/product', methods=['PUT'])
+def add_product_to_category():
+    return products_controller.add_product_to_category(request)
+
 
 @products.route('/products/company/<company_id>', methods=['GET'])
 def get_products_by_company_id(company_id):
