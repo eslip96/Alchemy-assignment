@@ -1,4 +1,4 @@
-from flask import Flask,jsonify, request
+from flask import Flask, jsonify, request
 import psycopg2
 
 import os
@@ -11,10 +11,6 @@ from models.product_category_xref import products_categories_association_table
 from routes.companies_routes import companies
 from routes.categories_routes import categories
 from routes.products_routes import products
-
-# from db import create_tables
-
-
 
 
 app = Flask(__name__)
@@ -35,14 +31,14 @@ database_name = os.environ.get("DATABASE_NAME")
 app.config["SQLALCHEMY_DATABASE_URI"] = f'postgresql://127.0.0.1:5432/{database_name}'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-init_db(app,db)
+init_db(app, db)
+
 
 def create_tables():
     with app.app_context():
         print("Creating tables...")
         db.create_all()
         print("Tables created succesfully")
-
 
 
 if __name__ == '__main__':

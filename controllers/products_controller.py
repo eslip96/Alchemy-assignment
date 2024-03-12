@@ -14,6 +14,7 @@ def add_product(req):
     price = post_data.get("price")
     active = post_data.get("active")
     company_id = post_data.get("company_id")
+    category_id = post_data.get("category_id")
 
     if not product_name:
         return jsonify({"message": "product name required"}), 400
@@ -23,6 +24,9 @@ def add_product(req):
 
     if not company_id:
         return jsonify({"message": "company id is required"}), 400
+
+    if not category_id:
+        return jsonify({"message": "category id is required"}), 400
 
     new_product = Products(
         product_name=product_name,
@@ -36,13 +40,18 @@ def add_product(req):
         db.session.add(new_product)
         db.session.commit()
 
+        category = db.session.query(Categories).filter_by(category_id=category_id).first()
+        if category:
+            new_product.categories.append(category)
+
         response_data = {
             'product_id': new_product.product_id,
             'product_name': new_product.product_name,
             'description': new_product.description,
             'price': new_product.price,
             'active': new_product.active,
-            'company_id': new_product.company_id
+            'company_id': new_product.company_id,
+            'category_id': category_id
         }
 
         return jsonify({
@@ -55,10 +64,17 @@ def add_product(req):
 
 
 def get_all_products(req):
+    associations = db.session.query(products_categories_association_table).all()
+    for association in associations:
+        print(association)
+
     prods = db.session.query(Products).all()
 
     products_list = []
     for product in prods:
+        category = product.categories[0] if product.categories else None
+        print(category)
+
         product_data = {
             'product_id': product.product_id,
             'product_name': product.product_name,
@@ -66,16 +82,10 @@ def get_all_products(req):
             'price': product.price,
             'active': product.active,
             'company_id': product.company_id,
-            'categories': []
+            'category_id': category.category_id if category else None
         }
-        categories = product.categories
-        for category in categories:
-            category_data = {
-                'category_id': category.category_id,
-                'category_name': category.category_name
-            }
-            product_data['categories'].append(category_data)
         products_list.append(product_data)
+        print(product_data)
 
     return jsonify({'products': products_list}), 200
 
@@ -146,55 +156,6 @@ def update_product(req, product_id):
     }
 
     return jsonify({'message': 'product updated', 'results': updated_data}), 200
-
-
-def add_product_to_category(req):
-    post_data = req.json
-
-    product_id = post_data.get('product_id')
-    category_id = post_data.get('category_id')
-
-    if not product_id or not category_id:
-        return jsonify({'error': 'both product id and category id are required.'}), 400
-
-    product = db.session.query(Products).filter(Products.product_id == product_id).first()
-    category = db.session.query(Categories).filter(Categories.category_id == category_id).first()
-
-    if not product or not category:
-        return jsonify({'error': 'product or category not found.'}), 404
-
-    if category in product.categories:
-        return jsonify({'error': 'product is already associated with the category.'}), 400
-
-    product.categories.append(category)
-
-    try:
-        db.session.commit()
-
-        category = db.session.query(Categories).filter(Categories.category_id == category_id).first()
-
-        if not category:
-            return jsonify({'error': 'category not found.'}), 404
-
-        products = category.products
-        product_list = []
-        for product in products:
-            product_data = {
-                'product_id': product.product_id,
-                'product_name': product.product_name,
-                'description': product.description,
-                'price': product.price,
-                'active': product.active,
-                'company_id': product.company_id,
-                'category_id': category.category_id,
-                'category_name': category.category_name
-            }
-            product_list.append(product_data)
-
-        return jsonify({'message': 'product added to category successfully.', 'products': product_list}), 200
-    except:
-        db.session.rollback()
-        return jsonify({'error': 'Failed to add product to category.'}), 400
 
 
 def get_products_by_company_id(company_id):
